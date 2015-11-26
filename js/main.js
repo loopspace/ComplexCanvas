@@ -4,15 +4,21 @@ var scale;
 var style = {
     axesWidth: 5,
     bgHue: 0,
-    font: "18px sans",
+    font: "sans",
+    fontSize: "18px",
     stroke: 'hsl(0,0,0)',
     labelColour: 'rgb(255,255,255)',
+    labelStroke: 'rgb(128,128,128)',
     pointColour: 'rgb(255,128,128)',
     pointRadius: 2,
     cpointColour: 'rgb(128,255,128)',
     cpointRadius: 2,
     ctrlPointColour: 'rgb(128,128,255)',
     ctrlPointRadius: 8,
+    cartesian: true,
+    border: 3,
+    singleton: false,
+    root: 4,
 }
 var points;
 var cpoints;
@@ -27,6 +33,9 @@ var tolerance = 64;
 var mouseAction;
 var mvpt;
 var offset;
+var currentOperation;
+var calc;
+var nctrls;
 
 function init() {
     var container = document.getElementById('layers');
@@ -57,7 +66,8 @@ function init() {
 	new Complex(0,0),
 	new Complex(1,0)
     ];
-    calc = operations['add'];
+    setOperation('roots');
+    Complex.setPrecision(1);
     drawBackground();
     drawAxes();
     drawPoints();
@@ -100,7 +110,7 @@ function drawAxes() {
     ctx.arc(ox,oy,s,0,2*Math.PI);
     ctx.stroke();
     ctx.fillStyle = style.labelColour;
-    ctx.font = style.font;
+    ctx.font = style.fontSize + ' ' + style.font;
     ctx.fillText("1",ox+s,oy);
     ctx.fillText("i",ox,oy-s);
 }
@@ -143,9 +153,15 @@ function drawCalcPoints() {
 
 function recalcPoints() {
     cpoints = [];
-    points.forEach(function(z) {
-	cpoints.push(calc(z));
-    });
+    if (style.singleton) {
+	cpoints = calc(points[points.length-1]);
+    } else {
+	points.forEach(function(z) {
+	    calc(z).forEach(function(w) {
+		cpoints.push(w);
+	    });
+	});
+    }
     drawCalcPoints();
     drawLabels();
 }
@@ -167,29 +183,116 @@ function drawPoint(z,v) {
     ctx = layers['cpoints'];
     ctx.fillStyle = style.cpointColour;
     r = style.cpointRadius;
-    ctx.beginPath();
-    ctx.arc(s * v.x + ox, -s * v.y + oy, r, 0, 2*Math.PI);
-    ctx.fill();
+    v.forEach(function(u) {
+	ctx.beginPath();
+	ctx.arc(s * u.x + ox, -s * u.y + oy, r, 0, 2*Math.PI);
+	ctx.fill();
+    });
     drawLabels();
 }
 
 function drawLabels() {
     var ctx = layers['labels'];
     clear(ctx);
+    ctx.font = style.fontSize + ' ' + style.font;
+    ctx.fillStyle = style.labelColour;
     var s = scale;
     var w = ctx.canvas.width;
     var h = ctx.canvas.height;
     var ox = s * centre.x + w/2;
     var oy = s * centre.y + h/2;
+    var z;
+    if (points.length > 0) {
+	z = points[points.length - 1];
+	if (style.cartesian) {
+	    drawCartesian(z);
+	} else {
+	    drawPolar(z);
+	}
+    }
+    if (cpoints.length > 0) {
+	z = cpoints[cpoints.length - 1];
+	if (style.cartesian) {
+	    drawCartesian(z);
+	} else {
+	    drawPolar(z);
+	}
+    }
     ctx.fillStyle = style.ctrlPointColour;
     var r = style.ctrlPointRadius;
-    ctrlpts.forEach(function(v) {
-	if (v) {
+    if (nctrls > 0) {
+	for (var i = 0; i < nctrls; i++) {
 	    ctx.beginPath();
-	    ctx.arc(s * v.x + ox, -s * v.y + oy, r, 0, 2*Math.PI);
+	    ctx.arc(s * ctrlpts[i].x + ox, -s * ctrlpts[i].y + oy, r, 0, 2*Math.PI);
 	    ctx.fill();
 	}
-    });
+	for (var i = 0; i < nctrls; i++) {
+	    ctx.fillText(ctrlpts[i].toString(),s * ctrlpts[i].x + ox + r, -s * ctrlpts[i].y + oy - r);
+	}	
+    }
+}
+
+function drawCartesian(z) {
+    var bdr = style.border;
+    var ctx = layers['labels'];
+    var s = scale;
+    var w = ctx.canvas.width;
+    var h = ctx.canvas.height;
+    var ox = s * centre.x + w/2;
+    var oy = s * centre.y + h/2;
+    var x = s * z.x + ox;
+    var y =  -s * z.y + oy;
+    ctx.strokeStyle = style.labelStroke;
+    ctx.beginPath();
+    ctx.moveTo(ox,oy);
+    ctx.lineTo(x,y);
+    ctx.moveTo(x,oy);
+    ctx.lineTo(x,y);
+    ctx.lineTo(ox,y);
+    ctx.stroke();
+    var r = style.pointRadius;
+    var str = z.toString();
+    var tm = measureText(ctx,style.fontSize,style.font,str);
+    if (z.x < 0) {
+	aw = - tm.width - r - bdr;
+    } else {
+	aw = r + bdr;
+    }
+    if (z.y < 0) {
+	ah = tm.height + r + bdr;
+    } else {
+	ah = - r - bdr;
+    }
+    ctx.fillText(str,x + aw, y + ah);
+    str = Complex.round(z.x);
+    tm = measureText(ctx,style.fontSize,style.font,str);
+    if (z.x < 0) {
+	aw = - tm.width - bdr;
+    } else {
+	aw = bdr;
+    }
+    if (z.y < 0) {
+	ah = -bdr;
+    } else {
+	ah = tm.height + bdr;
+    }
+    ctx.fillText(str,x + aw,oy + ah);
+    str = Complex.round(z.y);
+    tm = measureText(ctx,style.fontSize,style.font,str);
+    if (z.x < 0) {
+	aw = bdr;
+    } else {
+	aw = -tm.width - bdr; 
+    }
+    if (z.y < 0) {
+	ah = tm.height + bdr;
+    } else {
+	ah = -bdr;
+    }
+    ctx.fillText(str,ox + aw,y + ah);
+}
+
+function drawPolar(z) {
 }
 
 function clear(c) {
@@ -209,7 +312,13 @@ function addPoint(e) {
     var y = -(coords.y - h/2)/s;
     var z = new Complex(x,y);
     points.push(z);
-    cpoints.push(calc(z));
+    if (style.singleton) {
+	cpoints = calc(z);
+    } else {
+	calc(z).forEach(function(w) {
+	    cpoints.push(w);
+	});
+    }
     drawPoint(z,calc(z));
 }
 
@@ -221,16 +330,18 @@ function doMouseDown(e) {
     var ox = s * centre.x + w/2;
     var oy = s * centre.y + h/2;
     var d = tolerance;
-    ctrlpts.forEach(function(v,i) {
-	var x = s * v.x + ox - coords.x;
-	var y = -s * v.y + oy - coords.y;
-	if (x*x + y*y < d) {
-	    d = x*x + y*y;
-	    mvpt = i;
-	    b = true;
-	    offset = {x: x, y: y}
+    if (nctrls > 0) {
+	for (var i = 0; i < nctrls; i++) {
+	    var x = s * ctrlpts[i].x + ox - coords.x;
+	    var y = -s * ctrlpts[i].y + oy - coords.y;
+	    if (x*x + y*y < d) {
+		d = x*x + y*y;
+		mvpt = i;
+		b = true;
+		offset = {x: x, y: y}
+	    }
 	}
-    });
+    }
     if (b) {
 	mouseAction = 2;
     } else {
@@ -264,20 +375,107 @@ function doMouseMove(e) {
     }
 }
 
+function setOperation(o) {
+    if (o == currentOperation)
+	return;
+    currentOperation = o;
+    calc = operations[currentOperation]['op'];
+    nctrls = operations[currentOperation]['nc'];
+    recalcPoints();
+}
+
+operations = {
+    none: {
+	op: function(z) {},
+	nc: 0,
+    },
+    add: {
+	op: function(z) {return [z.add(ctrlpts[0])]},
+	nc: 1,
+    },
+    sub: {
+	op: function(z) {return [z.sub(ctrlpts[0])]},
+	nc: 1,
+    },
+    mul: {
+	op: function(z) {return [z.mul(ctrlpts[0])]},
+	nc: 1,
+    },
+    div: {
+	op: function(z) {return [z.div(ctrlpts[0])]},
+	nc: 1,
+    },
+    pow: {
+	op: function(z) {return [z.pow(ctrlpts[0])]},
+	nc: 1,
+    },
+    conj: {
+	op: function(z) {return [z.conj()]},
+	nc: 0,
+    },
+    roots: {
+	op: function(z) {var ret = []; for (var i = 0; i < style.root; i++) {ret.unshift(z.pow(1/style.root,i))}; return ret},
+	nc: 0,
+    },
+    mobius: {
+	op: function(z) {
+	    return [z.mul(ctrlpts[0]).add(ctrlpts[1]).div(z.mul(ctrlpts[2]).add(ctrlpts[3]))];
+	},
+	nc: 4,
+    }
+}
 
 function getRelativeCoords(event) {
     if (event.offsetX !== undefined && event.offsetY !== undefined) { return { x: event.offsetX, y: event.offsetY }; }
     return { x: event.layerX, y: event.layerY };
 }
 
-operations = {
-    add: function(z) {return z.add(ctrlpts[0])},
-    sub: function(z) {return z.sub(ctrlpts[0])},
-    mul: function(z) {return z.mul(ctrlpts[0])},
-    div: function(z) {return z.div(ctrlpts[0])},
-    pow: function(z) {return z.pow(ctrlpts[0])},
-    conj: function(z) {return z.conj()},
-    mobius: function(z) {
-	return z.mul(ctrlpts[0]).add(ctrlpts[1]).div(z.mul(ctrlpts[2]).add(ctrlpts[3]));
-    },
+var measureText = function(ctx,size,font,s) {
+    ctx.save();
+    ctx.font = font;
+    var w = ctx.measureText(s).width;
+    ctx.restore();
+    var r = getTextHeight(size,font,s);
+    r.width = w;
+    return r;
 }
+
+/*
+  From: http://stackoverflow.com/a/9847841
+*/
+
+var getTextHeight = function(size,font,s) {
+
+    var text = document.createTextNode(s);
+    var span = document.createElement('span');
+    var block = document.createElement('div');
+    var div = document.createElement('div');
+    span.appendChild(text);
+    div.appendChild(span);
+    div.appendChild(block);
+    var body = document.querySelector('body');
+    body.appendChild(div);
+
+    span.style.fontFamily = font;
+    span.style.fontSize = size;
+
+    div.style.display = 'inline-block';
+
+    try {
+
+	var result = {};
+
+	block.style.verticalAlign = 'baseline';
+	result.ascent = block.offsetTop - span.offsetTop;
+
+	block.style.verticalAlign = 'bottom';
+	result.height = block.offsetTop - span.offsetTop;
+
+	result.descent = result.height - result.ascent;
+
+    } finally {
+	div.remove();
+    }
+
+    return result;
+};

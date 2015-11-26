@@ -2,11 +2,6 @@ var __error = function(msg) {
     console.log(msg);
 }
 
-var precision = 2;
-var symbol = 'i';
-var angle = 1;
-var angsym = 'π';
-
 function Complex(x,y) {
     this.x = 0;
     this.y = 0;
@@ -33,6 +28,60 @@ function Complex(x,y) {
 /*
   Complex numbers are immutable
 */
+
+Complex.prototype.precision = 2;
+Complex.prototype.symbol = 'i';
+Complex.prototype.angle = 1;
+Complex.prototype.angsym = 'π';
+
+Complex.setPrecision = function(p) {
+    if (typeof(p) === 'number') {
+	Complex.prototype.precision = p;
+    } else {
+	return Complex.prototype.precision;
+    }
+}
+
+Complex.setSymbol = function(b) {
+    if (typeof(b) === 'boolean') {
+	if (b) {
+	    Complex.prototype.symbol = 'i';
+	} else {
+	    Complex.prototype.symbol = 'j';
+	}
+    } else {
+	return Complex.prototype.symbol;
+    }
+}
+
+Complex.setAngle = function(b) {
+    if (typeof(b) === 'boolean') {
+	if (b) {
+	    Complex.prototype.angle = 1;
+	} else {
+	    Complex.prototype.angle = 180;
+	}
+    } else {
+	return Complex.prototype.angle;
+    }
+}
+
+Complex.setAngleSymbol = function(b) {
+    if (typeof(b) === 'boolean') {
+	if (b) {
+	    Complex.prototype.angsym = 'π';
+	} else {
+	    Complex.prototype.angsym = '°';
+	}
+    } else {
+	return Complex.prototype.angsym;
+    }
+}
+
+Complex.round = function(x) {
+    var p = Math.pow(10,Complex.prototype.precision);
+    return Math.floor(x * p + .5)/p;
+}
 
 Complex.prototype.clone = function() {
     return new Complex(this);
@@ -169,33 +218,32 @@ Complex.prototype.imaginary = function() {
 
 Complex.prototype.toStringCartesian = function() {
     var s,x,y;
-    var p = Math.pow(10,precision);
-    x = Math.floor(this.x * p + .5)/p;
-    y = Math.floor(this.y * p + .5)/p;
+    x = Complex.round(this.x);
+    y = Complex.round(this.y);
     if (x !== 0)
 	s = x;
     if (y !== 0) {
 	if (s) {
 	    if (y > 0) {
 		if (y == 1) {
-		    s += ' + ' + symbol;
+		    s += ' + ' + this.symbol;
 		} else {
-		    s += ' + ' + y + symbol;
+		    s += ' + ' + y + this.symbol;
 		}
 	    } else {
 		if (y == -1) {
-		    s += ' - ' + symbol;
+		    s += ' - ' + this.symbol;
 		} else {
-		    s += ' - ' + (-y) + symbol;
+		    s += ' - ' + (-y) + this.symbol;
 		}
 	    }
 	} else {
 	    if (y == 1) {
-		s = symbol;
+		s = this.symbol;
 	    } else if (y == -1) {
-		s =  '-'  + symbol;
+		s =  '-'  + this.symbol;
 	    } else {
-		s = y + symbol;
+		s = y + this.symbol;
 	    }
 	}
     }
@@ -206,10 +254,10 @@ Complex.prototype.toStringCartesian = function() {
 
 Complex.prototype.toStringPolar = function() {
     var t,r;
-    var p = Math.pow(10,precision);
-    t = Math.floor(angle * this.arg() * p/Math.PI + .5)/p;
-    r = Math.floor(this.len() * p + .5)/p;
-    return '(' + r + ',' + t + angsym + ')';
+    var p = Math.pow(10,this.precision);
+    t = Complex.round(this.angle * this.arg()/Math.PI);
+    r = Complex.round(this.len());
+    return '(' + r + ',' + t + this.angsym + ')';
 }
 
 Complex.prototype.toString = Complex.prototype.toStringCartesian;
@@ -230,6 +278,8 @@ function testComplex() {
     log(z.len());
     log(z.arg());
     log(z.conjugate());
+    z = new Complex(-1,0);
+    log(z.pow(1/2,1));
 }
 
 testComplex();
