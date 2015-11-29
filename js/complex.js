@@ -127,14 +127,14 @@ Complex.prototype.div = function(z) {
 	    __error("Can't divide by zero");
 	    return false;
 	} else {
-	    return new Complex( (this.x * z.x + this.y * z.y)/l, (-this.x * z.y + this.y * z.y)/l);
+	    return new Complex( (this.x * z.x + this.y * z.y)/l, (-this.x * z.y + this.y * z.x)/l);
 	}
     } else if (typeof(z) === 'number') {
 	if (z === 0) {
 	    __error("Can't divide by zero");
 	    return false;
 	} else {
-	    return new Complex (this.x/l,this.y/l);
+	    return new Complex (this.x/z,this.y/z);
 	}
     }
 }
