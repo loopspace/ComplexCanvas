@@ -12,3 +12,12 @@ body {
     margin: 0pt;
     padding: 0pt;
 }
+
+#controls {
+    position: fixed;
+    width: 200px;
+    top: 0px;
+    right: 0px;
+    background: #ccc;
+    border-radius: 5px;
+}

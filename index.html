@@ -20,5 +20,40 @@
       <canvas id="axes" class="layer"></canvas>
       <canvas id="labels" class="layer"></canvas>
     </div>
+    <div id="controls">
+      <form id="ctrl">
+	<table>
+	  <tr>
+	    <td>Operation:</td>
+	    <td>
+	      <select id="op">
+		<option value="none">None</option>
+		<option value="add">Add</option>
+		<option value="sub">Subtract</option>
+		<option value="mul">Multiply</option>
+		<option value="div">Divide</option>
+		<option value="pow">Power</option>
+		<option value="conj">Conjugation</option>
+		<option value="roots">Roots</option>
+		<option value="mobius">Möbius</option>
+	      </select>
+	    </td>
+	  </tr>
+	  <tr>
+	    <td>Style:</td>
+	    <td>
+	      <select id="style">
+		<option value=0>Cartesian</option>
+		<option value=1>Polar</option>
+	      </select>
+	    </td>
+	  </tr>
+	  <tr>
+	    <td>Single Point:</td>
+	    <td><input type="checkbox" id="singleton"></td>
+	  </tr>
+	</table>
+      </form>
+    </div>
   </body>
 </html>
