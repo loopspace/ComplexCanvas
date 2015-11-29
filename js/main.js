@@ -66,7 +66,28 @@ function init() {
 	new Complex(0,0),
 	new Complex(1,0)
     ];
-    setOperation('roots');
+    var ctrl = document.getElementById('op');
+    ctrl.onchange = function(e) {
+	setOperation(this.value);
+    };
+    setOperation(ctrl.value);
+    ctrl = document.getElementById('style');
+    ctrl.onchange = function(e) {
+	if (e.value == 0) {
+	    style.cartesian = true;
+	} else {
+	    style.cartesian = true;
+	}
+	drawLabels();
+    };
+    if (ctrl.value == 1)
+	style.cartesian = false;
+    ctrl = document.getElementById('singleton');
+    ctrl.onchange = function(e) {
+	style.singleton = e.target.checked;
+	recalcPoints();
+    }
+    style.singleton = ctrl.checked;
     Complex.setPrecision(1);
     drawBackground();
     drawAxes();
@@ -168,6 +189,8 @@ function recalcPoints() {
 
 function drawPoint(z,v) {
     var ctx = layers['points'];
+    if (style.singleton)
+	clear(ctx);
     var s = scale;
     var w = ctx.canvas.width;
     var h = ctx.canvas.height;
@@ -181,6 +204,8 @@ function drawPoint(z,v) {
     if (!w)
 	return;
     ctx = layers['cpoints'];
+    if (style.singleton)
+	clear(ctx);
     ctx.fillStyle = style.cpointColour;
     r = style.cpointRadius;
     v.forEach(function(u) {
@@ -251,7 +276,7 @@ function drawCartesian(z) {
     ctx.lineTo(ox,y);
     ctx.stroke();
     var r = style.pointRadius;
-    var str = z.toString();
+    var str = z.toStringCartesian();
     var tm = measureText(ctx,style.fontSize,style.font,str);
     if (z.x < 0) {
 	aw = - tm.width - r - bdr;
@@ -293,6 +318,70 @@ function drawCartesian(z) {
 }
 
 function drawPolar(z) {
+    var bdr = style.border;
+    var ctx = layers['labels'];
+    var s = scale;
+    var w = ctx.canvas.width;
+    var h = ctx.canvas.height;
+    var ox = s * centre.x + w/2;
+    var oy = s * centre.y + h/2;
+    var x = s * z.x + ox;
+    var y =  -s * z.y + oy;
+    ctx.strokeStyle = style.labelStroke;
+    ctx.beginPath();
+    ctx.moveTo(ox,oy);
+    ctx.lineTo(x,y);
+    ctx.moveTo(s*z.len()/2+ox,oy);
+    if (z.arg() > 0) {
+	ctx.arc(ox,oy,s*z.len()/2,0,-z.arg(),true);
+    } else {
+	ctx.arc(ox,oy,s*z.len()/2,0,-z.arg());
+    }
+    ctx.stroke();
+    var r = style.pointRadius;
+    var str = z.toStringPolar();
+    var tm = measureText(ctx,style.fontSize,style.font,str);
+    if (z.x < 0) {
+	aw = - tm.width - r - bdr;
+    } else {
+	aw = r + bdr;
+    }
+    if (z.y < 0) {
+	ah = tm.height + r + bdr;
+    } else {
+	ah = - r - bdr;
+    }
+    ctx.fillText(str,x + aw, y + ah);
+    str = Complex.round(z.len());
+    tm = measureText(ctx,style.fontSize,style.font,str);
+    if (z.x < 0) {
+	aw = - tm.width - bdr;
+    } else {
+	aw = bdr;
+    }
+    if (z.y < 0) {
+	ah = -bdr;
+    } else {
+	ah = -tm.height - bdr;
+    }
+    x = s * z.x/2 + ox;
+    y =  -s * z.y/2 + oy;
+    ctx.fillText(str,x + aw,y + ah);
+    str = Complex.round(z.arg());
+    tm = measureText(ctx,style.fontSize,style.font,str);
+    x = s * z.len() * Math.cos(z.arg()/2)/2 + ox;
+    y = -s * z.len() * Math.sin(z.arg()/2)/2 + oy;
+    if (z.x < 0) {
+	aw = bdr;
+    } else {
+	aw = -tm.width - bdr; 
+    }
+    if (z.y < 0) {
+	ah = tm.height + bdr;
+    } else {
+	ah = -bdr;
+    }
+    ctx.fillText(str,x + aw,y + ah);
 }
 
 function clear(c) {
@@ -386,7 +475,7 @@ function setOperation(o) {
 
 operations = {
     none: {
-	op: function(z) {},
+	op: function(z) {return []},
 	nc: 0,
     },
     add: {
