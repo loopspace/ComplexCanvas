@@ -9,12 +9,20 @@ var style = {
     stroke: 'hsl(0,0,0)',
     labelColour: 'rgb(255,255,255)',
     labelStroke: 'rgb(128,128,128)',
-    pointColour: 'rgb(255,128,128)',
-    pointRadius: 2,
-    cpointColour: 'rgb(128,255,128)',
-    cpointRadius: 2,
-    ctrlPointColour: 'rgb(128,128,255)',
-    ctrlPointRadius: 8,
+    point: {
+	colour: 'rgb(255,128,128)',
+	radius: 4,
+    },
+    cpoint: {
+	colour: 'rgb(128,255,128)',
+	radius: 4,
+    },
+    ctrlPoint: {
+	colour: ['rgb(128,128,255)','rgb(64,64,128)','rgb(32,32,64)','rgb(16,16,32)'],
+	radius: 8,
+    },
+    labels: true,
+    guides: true,
     cartesian: true,
     border: 3,
     singleton: false,
@@ -73,10 +81,10 @@ function init() {
     setOperation(ctrl.value);
     ctrl = document.getElementById('style');
     ctrl.onchange = function(e) {
-	if (e.value == 0) {
+	if (this.value == 0) {
 	    style.cartesian = true;
 	} else {
-	    style.cartesian = true;
+	    style.cartesian = false;
 	}
 	drawLabels();
     };
@@ -84,10 +92,28 @@ function init() {
 	style.cartesian = false;
     ctrl = document.getElementById('singleton');
     ctrl.onchange = function(e) {
-	style.singleton = e.target.checked;
+	style.singleton = this.checked;
 	recalcPoints();
     }
     style.singleton = ctrl.checked;
+    ctrl = document.getElementById('root');
+    ctrl.onchange = function(e) {
+	style.root = parseInt(this.value,10);
+	recalcPoints();
+    }
+    style.root = ctrl.value;
+    ctrl = document.getElementById('slabels');
+    ctrl.onchange = function(e) {
+	style.labels = this.checked;
+	drawLabels();
+    }
+    style.labels = ctrl.checked;
+    ctrl = document.getElementById('guides');
+    ctrl.onchange = function(e) {
+	style.guides = this.checked;
+	drawLabels();
+    }
+    style.guides = ctrl.checked;
     Complex.setPrecision(1);
     drawBackground();
     drawAxes();
@@ -144,8 +170,8 @@ function drawPoints() {
     var h = ctx.canvas.height;
     var ox = s * centre.x + w/2;
     var oy = s * centre.y + h/2;
-    ctx.fillStyle = style.pointColour;
-    var r = style.pointRadius;
+    ctx.fillStyle = style.point.colour;
+    var r = style.point.radius;
     points.forEach(function(v) {
 	ctx.beginPath();
 	ctx.arc(s * v.x + ox, -s * v.y + oy, r, 0, 2*Math.PI);
@@ -161,8 +187,8 @@ function drawCalcPoints() {
     var h = ctx.canvas.height;
     var ox = s * centre.x + w/2;
     var oy = s * centre.y + h/2;
-    ctx.fillStyle = style.cpointColour;
-    var r = style.cpointRadius;
+    ctx.fillStyle = style.cpoint.colour;
+    var r = style.cpoint.radius;
     cpoints.forEach(function(v) {
 	if (v) {
 	    ctx.beginPath();
@@ -196,8 +222,8 @@ function drawPoint(z,v) {
     var h = ctx.canvas.height;
     var ox = s * centre.x + w/2;
     var oy = s * centre.y + h/2;
-    ctx.fillStyle = style.pointColour;
-    var r = style.pointRadius;
+    ctx.fillStyle = style.point.colour;
+    var r = style.point.radius;
     ctx.beginPath();
     ctx.arc(s * z.x + ox, -s * z.y + oy, r, 0, 2*Math.PI);
     ctx.fill();
@@ -206,8 +232,8 @@ function drawPoint(z,v) {
     ctx = layers['cpoints'];
     if (style.singleton)
 	clear(ctx);
-    ctx.fillStyle = style.cpointColour;
-    r = style.cpointRadius;
+    ctx.fillStyle = style.cpoint.colour;
+    r = style.cpoint.radius;
     v.forEach(function(u) {
 	ctx.beginPath();
 	ctx.arc(s * u.x + ox, -s * u.y + oy, r, 0, 2*Math.PI);
@@ -218,6 +244,12 @@ function drawPoint(z,v) {
 
 function drawLabels() {
     var ctx = layers['labels'];
+    var doLabel;
+    if (style.cartesian) {
+	doLabel = drawCartesian;
+    } else {
+	doLabel = drawPolar;
+    }
     clear(ctx);
     ctx.font = style.fontSize + ' ' + style.font;
     ctx.fillStyle = style.labelColour;
@@ -229,35 +261,28 @@ function drawLabels() {
     var z;
     if (points.length > 0) {
 	z = points[points.length - 1];
-	if (style.cartesian) {
-	    drawCartesian(z);
-	} else {
-	    drawPolar(z);
-	}
+	lines(ctx,z);
+	doLabel(z,style.point);
     }
     if (cpoints.length > 0) {
 	z = cpoints[cpoints.length - 1];
-	if (style.cartesian) {
-	    drawCartesian(z);
-	} else {
-	    drawPolar(z);
-	}
+	doLabel(z,style.cpoint);
     }
-    ctx.fillStyle = style.ctrlPointColour;
-    var r = style.ctrlPointRadius;
     if (nctrls > 0) {
+	var r = style.ctrlPoint.radius;
 	for (var i = 0; i < nctrls; i++) {
+	    ctx.fillStyle = style.labelColour;
+	    doLabel(ctrlpts[i],style.ctrlPoint);
+	    ctx.fillStyle = style.ctrlPoint.colour[i];
 	    ctx.beginPath();
 	    ctx.arc(s * ctrlpts[i].x + ox, -s * ctrlpts[i].y + oy, r, 0, 2*Math.PI);
 	    ctx.fill();
+
 	}
-	for (var i = 0; i < nctrls; i++) {
-	    ctx.fillText(ctrlpts[i].toString(),s * ctrlpts[i].x + ox + r, -s * ctrlpts[i].y + oy - r);
-	}	
     }
 }
 
-function drawCartesian(z) {
+function drawCartesian(z,st) {
     var bdr = style.border;
     var ctx = layers['labels'];
     var s = scale;
@@ -267,57 +292,58 @@ function drawCartesian(z) {
     var oy = s * centre.y + h/2;
     var x = s * z.x + ox;
     var y =  -s * z.y + oy;
-    ctx.strokeStyle = style.labelStroke;
-    ctx.beginPath();
-    ctx.moveTo(ox,oy);
-    ctx.lineTo(x,y);
-    ctx.moveTo(x,oy);
-    ctx.lineTo(x,y);
-    ctx.lineTo(ox,y);
-    ctx.stroke();
-    var r = style.pointRadius;
-    var str = z.toStringCartesian();
-    var tm = measureText(ctx,style.fontSize,style.font,str);
-    if (z.x < 0) {
-	aw = - tm.width - r - bdr;
-    } else {
-	aw = r + bdr;
+    if (style.guides) {
+	ctx.strokeStyle = style.labelStroke;
+	ctx.beginPath();
+	ctx.moveTo(ox,oy);
+	ctx.lineTo(x,y);
+	ctx.moveTo(x,oy);
+	ctx.lineTo(x,y);
+	ctx.lineTo(ox,y);
+	ctx.stroke();
     }
+    if (!style.labels)
+	return;
+    var r = st.radius;
+    var a;
     if (z.y < 0) {
-	ah = tm.height + r + bdr;
+	a = 'north ';
     } else {
-	ah = - r - bdr;
+	a = 'south ';
     }
-    ctx.fillText(str,x + aw, y + ah);
-    str = Complex.round(z.x);
-    tm = measureText(ctx,style.fontSize,style.font,str);
     if (z.x < 0) {
-	aw = - tm.width - bdr;
+	a += 'east';
     } else {
-	aw = bdr;
+	a += 'west';
     }
-    if (z.y < 0) {
-	ah = -bdr;
-    } else {
-	ah = tm.height + bdr;
+    textNode(ctx,z.toStringCartesian(),style.fontSize,style.font,x,y,r,a);
+    if (style.guides) {
+	if (z.y < 0) {
+	    a = 'south ';
+	} else {
+	    a = 'north ';
+	}
+	if (z.x < 0) {
+	    a += 'east';
+	} else {
+	    a += 'west';
+	}
+	textNode(ctx,Complex.round(z.x),style.fontSize,style.font,x,oy,r,a);
+	if (z.y < 0) {
+	    a = 'north ';
+	} else {
+	    a = 'south ';
+	}
+	if (z.x < 0) {
+	    a += 'west';
+	} else {
+	    a += 'east';
+	}
+	textNode(ctx,Complex.round(z.y),style.fontSize,style.font,ox,y,r,a);
     }
-    ctx.fillText(str,x + aw,oy + ah);
-    str = Complex.round(z.y);
-    tm = measureText(ctx,style.fontSize,style.font,str);
-    if (z.x < 0) {
-	aw = bdr;
-    } else {
-	aw = -tm.width - bdr; 
-    }
-    if (z.y < 0) {
-	ah = tm.height + bdr;
-    } else {
-	ah = -bdr;
-    }
-    ctx.fillText(str,ox + aw,y + ah);
 }
 
-function drawPolar(z) {
+function drawPolar(z,st) {
     var bdr = style.border;
     var ctx = layers['labels'];
     var s = scale;
@@ -327,61 +353,57 @@ function drawPolar(z) {
     var oy = s * centre.y + h/2;
     var x = s * z.x + ox;
     var y =  -s * z.y + oy;
-    ctx.strokeStyle = style.labelStroke;
-    ctx.beginPath();
-    ctx.moveTo(ox,oy);
-    ctx.lineTo(x,y);
-    ctx.moveTo(s*z.len()/2+ox,oy);
-    if (z.arg() > 0) {
-	ctx.arc(ox,oy,s*z.len()/2,0,-z.arg(),true);
-    } else {
-	ctx.arc(ox,oy,s*z.len()/2,0,-z.arg());
+    if (style.guides) {
+	ctx.strokeStyle = style.labelStroke;
+	ctx.beginPath();
+	ctx.moveTo(ox,oy);
+	ctx.lineTo(x,y);
+	ctx.moveTo(s*z.len()/2+ox,oy);
+	if (z.arg() > 0) {
+	    ctx.arc(ox,oy,s*z.len()/2,0,-z.arg(),true);
+	} else {
+	    ctx.arc(ox,oy,s*z.len()/2,0,-z.arg());
+	}
+	ctx.stroke();
     }
-    ctx.stroke();
-    var r = style.pointRadius;
-    var str = z.toStringPolar();
-    var tm = measureText(ctx,style.fontSize,style.font,str);
-    if (z.x < 0) {
-	aw = - tm.width - r - bdr;
-    } else {
-	aw = r + bdr;
-    }
+    if (!style.labels)
+	return;
+    var r = st.radius;
+    var a;
     if (z.y < 0) {
-	ah = tm.height + r + bdr;
+	a = 'north ';
     } else {
-	ah = - r - bdr;
+	a = 'south ';
     }
-    ctx.fillText(str,x + aw, y + ah);
-    str = Complex.round(z.len());
-    tm = measureText(ctx,style.fontSize,style.font,str);
     if (z.x < 0) {
-	aw = - tm.width - bdr;
+	a += 'east';
     } else {
-	aw = bdr;
+	a += 'west';
     }
-    if (z.y < 0) {
-	ah = -bdr;
-    } else {
-	ah = -tm.height - bdr;
+    textNode(ctx,z.toStringPolar(),style.fontSize,style.font,x,y,r,a);
+    if (style.guides) {
+	if (z.y < 0) {
+	    a = 'north ';
+	} else {
+	    a = 'south ';
+	}
+	if (z.x < 0) {
+	    a += 'west';
+	} else {
+	    a += 'east';
+	}
+	x = s * z.x/2 + ox;
+	y =  -s * z.y/2 + oy;
+	textNode(ctx,Complex.round(z.len()),style.fontSize,style.font,x,y,r,a);
+	if (z.arg() > 0) {
+	    a = "south west";
+	} else {
+	    a = "north west";
+	}
+	x = s * z.len() * Math.cos(z.arg()/2)/2 + ox;
+	y = -s * z.len() * Math.sin(z.arg()/2)/2 + oy;
+	textNode(ctx,Complex.round(z.arg()),style.fontSize,style.font,x,y,r,a);
     }
-    x = s * z.x/2 + ox;
-    y =  -s * z.y/2 + oy;
-    ctx.fillText(str,x + aw,y + ah);
-    str = Complex.round(z.arg());
-    tm = measureText(ctx,style.fontSize,style.font,str);
-    x = s * z.len() * Math.cos(z.arg()/2)/2 + ox;
-    y = -s * z.len() * Math.sin(z.arg()/2)/2 + oy;
-    if (z.x < 0) {
-	aw = bdr;
-    } else {
-	aw = -tm.width - bdr; 
-    }
-    if (z.y < 0) {
-	ah = tm.height + bdr;
-    } else {
-	ah = -bdr;
-    }
-    ctx.fillText(str,x + aw,y + ah);
 }
 
 function clear(c) {
@@ -468,8 +490,15 @@ function setOperation(o) {
     if (o == currentOperation)
 	return;
     currentOperation = o;
-    calc = operations[currentOperation]['op'];
-    nctrls = operations[currentOperation]['nc'];
+    calc = operations[o]['op'];
+    nctrls = operations[o]['nc'];
+    lines = operations[o]['ln'];
+    var rsel = document.getElementById('rootsel');
+    if (o == "roots") {
+	rsel.style.display = 'table-row';
+    } else {
+	rsel.style.display = 'none';
+    }
     recalcPoints();
 }
 
@@ -477,40 +506,160 @@ operations = {
     none: {
 	op: function(z) {return []},
 	nc: 0,
+	ln: function(ctx,z) {},
     },
     add: {
 	op: function(z) {return [z.add(ctrlpts[0])]},
 	nc: 1,
+	ln: function(ctx,z) {
+	    var s = scale;
+	    var w = ctx.canvas.width;
+	    var h = ctx.canvas.height;
+	    var ox = s * centre.x + w/2;
+	    var oy = s * centre.y + h/2;
+	    var x = s * z.x + ox;
+	    var y =  -s * z.y + oy;
+	    var w = z.add(ctrlpts[0]);
+	    var ax = s * w.x + ox;
+	    var ay =  -s * w.y + oy;
+	    var cx = s * ctrlpts[0].x + ox;
+	    var cy =  -s * ctrlpts[0].y + oy;
+	    ctx.strokeStyle = style.labelStroke;
+	    ctx.beginPath();
+	    ctx.moveTo(ox,oy);
+	    ctx.lineTo(x,y);
+	    ctx.lineTo(ax,ay);
+	    ctx.lineTo(cx,cy);
+	    ctx.lineTo(ox,oy);
+	    ctx.stroke();
+	},
     },
     sub: {
 	op: function(z) {return [z.sub(ctrlpts[0])]},
 	nc: 1,
+	ln: function(ctx,z) {
+	    var s = scale;
+	    var w = ctx.canvas.width;
+	    var h = ctx.canvas.height;
+	    var ox = s * centre.x + w/2;
+	    var oy = s * centre.y + h/2;
+	    var x = s * z.x + ox;
+	    var y =  -s * z.y + oy;
+	    var w = z.sub(ctrlpts[0]);
+	    var ax = s * w.x + ox;
+	    var ay =  -s * w.y + oy;
+	    var cx = s * ctrlpts[0].x + ox;
+	    var cy =  -s * ctrlpts[0].y + oy;
+	    ctx.strokeStyle = style.labelStroke;
+	    ctx.beginPath();
+	    ctx.moveTo(ox,oy);
+	    ctx.lineTo(x,y);
+	    ctx.lineTo(ax,ay);
+	    ctx.lineTo(cx,cy);
+	    ctx.lineTo(ox,oy);
+	    ctx.stroke();
+	},
     },
     mul: {
 	op: function(z) {return [z.mul(ctrlpts[0])]},
 	nc: 1,
+	ln: function(ctx,z) {
+	    var s = scale;
+	    var w = ctx.canvas.width;
+	    var h = ctx.canvas.height;
+	    var ox = s * centre.x + w/2;
+	    var oy = s * centre.y + h/2;
+	    var x = s * z.x + ox;
+	    var y =  -s * z.y + oy;
+	    var w = z.mul(ctrlpts[0]);
+	    var ax = s * w.x + ox;
+	    var ay =  -s * w.y + oy;
+	    var cx = s * ctrlpts[0].x + ox;
+	    var cy =  -s * ctrlpts[0].y + oy;
+	    ctx.strokeStyle = style.labelStroke;
+	    ctx.beginPath();
+	    ctx.moveTo(ox,oy);
+	    ctx.lineTo(x,y);
+	    ctx.lineTo(ox + s,oy);
+	    ctx.lineTo(ox,oy);
+	    ctx.moveTo(ox,oy);
+	    ctx.lineTo(cx,cy);
+	    ctx.lineTo(ax,ay);
+	    ctx.lineTo(ox,oy);
+	    ctx.stroke();
+	},
     },
     div: {
 	op: function(z) {return [z.div(ctrlpts[0])]},
 	nc: 1,
+	ln: function(ctx,z) {
+	    var s = scale;
+	    var w = ctx.canvas.width;
+	    var h = ctx.canvas.height;
+	    var ox = s * centre.x + w/2;
+	    var oy = s * centre.y + h/2;
+	    var x = s * z.x + ox;
+	    var y =  -s * z.y + oy;
+	    var w = z.div(ctrlpts[0]);
+	    var ax = s * w.x + ox;
+	    var ay =  -s * w.y + oy;
+	    var cx = s * ctrlpts[0].x + ox;
+	    var cy =  -s * ctrlpts[0].y + oy;
+	    ctx.strokeStyle = style.labelStroke;
+	    ctx.beginPath();
+	    ctx.moveTo(ox,oy);
+	    ctx.lineTo(x,y);
+	    ctx.lineTo(ox + s,oy);
+	    ctx.lineTo(ox,oy);
+	    ctx.moveTo(ox,oy);
+	    ctx.lineTo(cx,cy);
+	    ctx.lineTo(ax,ay);
+	    ctx.lineTo(ox,oy);
+	    ctx.stroke();
+	},
     },
     pow: {
 	op: function(z) {return [z.pow(ctrlpts[0])]},
 	nc: 1,
+	ln: function(ctx,z) {},
     },
     conj: {
 	op: function(z) {return [z.conj()]},
 	nc: 0,
+	ln: function(ctx,z) {},
     },
     roots: {
 	op: function(z) {var ret = []; for (var i = 0; i < style.root; i++) {ret.unshift(z.pow(1/style.root,i))}; return ret},
 	nc: 0,
+	ln: function(ctx,z) {
+	    var s = scale;
+	    var w = ctx.canvas.width;
+	    var h = ctx.canvas.height;
+	    var ox = s * centre.x + w/2;
+	    var oy = s * centre.y + h/2;
+	    var ret = [];
+	    for (var i = 0; i < style.root; i++) {
+		ret.unshift(z.pow(1/style.root,i));
+	    }
+	    var x = s * ret[style.root - 1].x + ox;
+	    var y =  -s * ret[style.root - 1].y + oy;
+	    ctx.strokeStyle = style.labelStroke;
+	    ctx.beginPath();
+	    ctx.moveTo(x,y);
+	    for (var i = 0; i < style.root; i++) {
+		x = s * ret[i].x + ox;
+		y =  -s * ret[i].y + oy;
+		ctx.lineTo(x,y);
+	    }
+	    ctx.stroke();
+	},
     },
     mobius: {
 	op: function(z) {
 	    return [z.mul(ctrlpts[0]).add(ctrlpts[1]).div(z.mul(ctrlpts[2]).add(ctrlpts[3]))];
 	},
 	nc: 4,
+	ln: function(ctx,z) {},
     }
 }
 
@@ -521,7 +670,7 @@ function getRelativeCoords(event) {
 
 var measureText = function(ctx,size,font,s) {
     ctx.save();
-    ctx.font = font;
+    ctx.font = size + ' ' + font;
     var w = ctx.measureText(s).width;
     ctx.restore();
     var r = getTextHeight(size,font,s);
@@ -547,8 +696,9 @@ var getTextHeight = function(size,font,s) {
 
     span.style.fontFamily = font;
     span.style.fontSize = size;
-
-    div.style.display = 'inline-block';
+    block.style.display = 'inline-block';
+    block.style.width = '1px';
+    block.style.height = '0px';
 
     try {
 
@@ -568,3 +718,33 @@ var getTextHeight = function(size,font,s) {
 
     return result;
 };
+
+var textNode = function(ctx,str,size,font,x,y,b,a) {
+    var tm = measureText(ctx,size,font,str);
+    if (a == 'south') {
+	y -= tm.descent - b;
+	x -= tm.width/2;
+    } else if (a == 'north') {
+	y += tm.ascent + b;
+	x -= tm.width/2;
+    } else if (a == 'north west') {
+	y += tm.ascent + b;
+	x += b;
+    } else if (a == 'south west') {
+	y -= tm.descent - b;
+	x += b;
+    } else if (a == 'north east') {
+	y += tm.ascent + b;
+	x -= tm.width - b;
+    } else if (a == 'south east') {
+	y -= tm.descent - b;
+	x -= tm.width - b;
+    } else if (a == 'base east') {
+	x -= tm.width - b;
+    } else if (a == 'base west') {
+	x += b;
+    } else if (a == 'base') {
+	x -= tm.width/2 ;
+    }
+    ctx.fillText(str,x,y);
+}
