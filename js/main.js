@@ -93,6 +93,10 @@ function init() {
     ctrl = document.getElementById('singleton');
     ctrl.onchange = function(e) {
 	style.singleton = this.checked;
+	clear(layers['points']);
+	clear(layers['cpoints']);
+	points = [points.pop()];
+	drawPoints();
 	recalcPoints();
     }
     style.singleton = ctrl.checked;
@@ -114,6 +118,31 @@ function init() {
 	drawLabels();
     }
     style.guides = ctrl.checked;
+    var icons = document.querySelectorAll('#icons a');
+    var s = icons[0].scrollWidth;
+    for (var i = 0; i < icons.length; i++) {
+	s = Math.max(s,icons[i].scrollWidth);
+	s = Math.max(s,icons[i].scrollHeight);
+    }
+    var pd;
+    for (var i = 0; i < icons.length; i++) {
+	pd = (s - icons[i].scrollWidth)/2 + 3;
+	icons[i].style.paddingLeft = pd + 'px';
+	icons[i].style.paddingRight = pd + 'px';
+	icons[i].style.paddingTop = '3px';
+	icons[i].style.paddingBottom = '3px';
+    }
+    var micon = document.getElementById('micon');
+    var menu = document.getElementById('menu');
+    micon.onclick = function(e) {
+	e.preventDefault();
+	if (menu.style.display == 'none') {
+	    menu.style.display = '';
+	} else {
+	    menu.style.display = 'none';
+	}
+	return false;
+    }
     Complex.setPrecision(1);
     drawBackground();
     drawAxes();
@@ -422,10 +451,11 @@ function addPoint(e) {
     var x = (coords.x - w/2)/s;
     var y = -(coords.y - h/2)/s;
     var z = new Complex(x,y);
-    points.push(z);
     if (style.singleton) {
+	points = [z];
 	cpoints = calc(z);
     } else {
+	points.push(z);
 	calc(z).forEach(function(w) {
 	    cpoints.push(w);
 	});
@@ -553,8 +583,8 @@ operations = {
 	    ctx.strokeStyle = style.labelStroke;
 	    ctx.beginPath();
 	    ctx.moveTo(ox,oy);
-	    ctx.lineTo(x,y);
 	    ctx.lineTo(ax,ay);
+	    ctx.lineTo(x,y);
 	    ctx.lineTo(cx,cy);
 	    ctx.lineTo(ox,oy);
 	    ctx.stroke();
@@ -608,12 +638,12 @@ operations = {
 	    ctx.strokeStyle = style.labelStroke;
 	    ctx.beginPath();
 	    ctx.moveTo(ox,oy);
-	    ctx.lineTo(x,y);
+	    ctx.lineTo(ax,ay);
 	    ctx.lineTo(ox + s,oy);
 	    ctx.lineTo(ox,oy);
 	    ctx.moveTo(ox,oy);
 	    ctx.lineTo(cx,cy);
-	    ctx.lineTo(ax,ay);
+	    ctx.lineTo(x,y);
 	    ctx.lineTo(ox,oy);
 	    ctx.stroke();
 	},
