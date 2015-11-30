@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="viewport" id="viewport" content="width=device-width initial-scale=1 maximum-scale=1 user-scalable=no" />
+    
+    <title>Complex Visualiser - Help</title>
+    <link href="css/mathml.css" media="all" rel="stylesheet" type="text/css"/>
+
+    <link href="css/article.css" media="all" rel="stylesheet" type="text/css"/>
+    <link href="https://fonts.googleapis.com/css?family=Raleway:300" media="all" rel="stylesheet" type="text/css"/>
+    <link href="css/small.css" media="all and (max-width: 767px)" rel="stylesheet" type="text/css"/>
+    <link href="css/medium.css" media="all and (min-width: 768px) and (max-width: 1024px)" rel="stylesheet" type="text/css"/>
+    <link href="css/large.css" media="all and (min-width: 1025px)"
+	  rel="stylesheet" type="text/css"/>
+    <script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=MML_HTMLorMML" type="text/javascript"/></script>
+  </head>
+  <body>
+    <div id="background"></div><div id="content">
+      <div id="title">
+	<p>Complex Visualiser</p>
+      </div>
+      <h1>Introduction</h2>
+      <p>
+	The Complex Visualiser is for you to explore complex numbers in
+	a geometrical setting.  You can draw points (that
+	is, <em>complex numbers</em>) on an <em>Argand diagram</em>
+	and see how those points transform under various operations.
+	Various options allow you to see how the original points and
+	calculated points are related. 
+      </p>
+      <h1>Usage</h1>
+      <p>
+	The basic usage of this program is to draw points on the
+	complex plane (or <em>Argand diagram</em>).
+      </p>
+      <p>
+	Points can be
+	<em>labelled</em> and can have <em>guides</em> shown.  The
+	style of the labels and guides can be
+	either <em>Cartesian</em> or <em>Polar</em>.
+	If <em>Cartesian</em> then the label is of the
+	form <math xmlns='http://www.w3.org/1998/Math/MathML'
+	display='inline'><mi>x</mi><mo>+</mo><mi mathvariant="normal">i</mi><mi>y</mi></math>
+	and the guides show
+	how it relates to <math xmlns='http://www.w3.org/1998/Math/MathML'
+	display='inline'><mi>x</mi></math>
+	and <math xmlns='http://www.w3.org/1998/Math/MathML'
+	display='inline'><mi>y</mi></math> on the axes.
+	If <em>Polar</em> then the label is of the
+	form <math xmlns='http://www.w3.org/1998/Math/MathML'
+	display='inline'><mo stretchy="false">(</mo><mi>r</mi><mo>,</mo><mi>&theta;</mi><mo stretchy="false">)</mo></math>
+	and the guides show how <math xmlns='http://www.w3.org/1998/Math/MathML'
+	display='inline'><mi>r</mi></math> is the length and <math xmlns='http://www.w3.org/1998/Math/MathML'
+								   display='inline'><mi>&theta;</mi></math>
+	is the angle.
+	Lastly, when drawing points you can choose to show only the
+	current point or a trace of all points.
+      </p>
+      <p>
+	You can choose to apply an operation to your points.  Some of
+	these operations require one or more extra points, which this
+	program calls <em>control points</em>.  If needed, these are
+	displayed by default as slightly larger points.  If more than
+	one is needed, they are ordered by brightness.  These can be
+	moved around by dragging them.  In addition, where deemed
+	useful then certain diagrams are shown to illustrate the
+	operation.
+      </p>
+      <p>
+	The operations are as follows.  In the explanations, <math xmlns='http://www.w3.org/1998/Math/MathML'
+	display='inline'><mi>z</mi></math> represents the point you
+	make by clicking, <math xmlns='http://www.w3.org/1998/Math/MathML'
+	display='inline'><mi>w</mi></math> represents the result of
+	the operation, and the <math xmlns='http://www.w3.org/1998/Math/MathML'
+	display='inline'><msub><mi>z</mi> <mn>i</mn></msub></math> are
+	the control points.
+      </p>
+      <ul>
+	<li><p><strong>None</strong>: No operation is applied, only the
+	    points you draw are shown.</p>
+	<li><p><strong>Add</strong>: Each point is added to the
+	control point,
+	    So <math xmlns='http://www.w3.org/1998/Math/MathML'
+	display='inline'><mi>w</mi><mo>=</mo><mi>z</mi><mo>+</mo><msub><mi>z</mi> <mn>1</mn></msub></math>.
+	    The diagram shows the addition parallelogram.</p>
+	<li><p><strong>Subtraction</strong>: The control point is
+	subtracted from each point.
+	    So <math xmlns='http://www.w3.org/1998/Math/MathML'
+	display='inline'><mi>w</mi><mo>=</mo><mi>z</mi><mo>-</mo><msub><mi>z</mi> <mn>1</mn></msub></math>.
+	    The diagram shows the subtraction parallelogram.</p>
+	<li><p><strong>Multiplication</strong>: Each point is
+	multiplied by the control point.
+	    So <math xmlns='http://www.w3.org/1998/Math/MathML'
+	display='inline'><mi>w</mi><mo>=</mo><mi>z</mi><mo>&times;</mo><msub><mi>z</mi> <mn>1</mn></msub></math>.
+	    The diagram shows the two similar
+	triangles: <math xmlns='http://www.w3.org/1998/Math/MathML'
+	display='inline'><mo stretchy="false">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>,</mo><mi>z</mi><mo stretchy="false">)</mo></math>
+	and <math xmlns='http://www.w3.org/1998/Math/MathML'
+		  display='inline'><mo stretchy="false">(</mo><mn>0</mn><mo>,</mo><msub><mi>z</mi> <mn>1</mn></msub><mo>,</mo><mi>w</mi><mo stretchy="false">)</mo></math>.</p>
+	<li><p><strong>Division</strong>: Each point is
+	divided by the control point.
+	    So <math xmlns='http://www.w3.org/1998/Math/MathML'
+	display='inline'><mi>w</mi><mo>=</mo><mi>z</mi><mo stretchy="false">/</mo><msub><mi>z</mi> <mn>1</mn></msub></math>.
+	    The diagram shows the two similar
+	triangles: <math xmlns='http://www.w3.org/1998/Math/MathML'
+	display='inline'><mo stretchy="false">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>,</mo><mi>w</mi><mo stretchy="false">)</mo></math>
+	and <math xmlns='http://www.w3.org/1998/Math/MathML'
+		  display='inline'><mo stretchy="false">(</mo><mn>0</mn><mo>,</mo><msub><mi>z</mi> <mn>1</mn></msub><mo>,</mo><mi>z</mi><mo stretchy="false">)</mo></math>.</p>
+	<li><p><strong>Power</strong>: Each point is raised to the
+	    power of the control point.
+	    So <math xmlns='http://www.w3.org/1998/Math/MathML'
+		     display='inline'><mi>w</mi><mo>=</mo><msup><mi>z</mi> <mrow><msub><mi>z</mi> <mn>1</mn></msub></mrow></msup></math>.
+	    Note that for most values
+	    of <math xmlns='http://www.w3.org/1998/Math/MathML'
+	    display='inline'><msub><mi>z</mi> <mn>1</mn></msub></math>
+	    this is <em>multi-valued</em>.
+	    Only the first value is shown.</p>
+	<li><p><strong>Conjugation</strong>: Each point is conjugated,
+	so <math xmlns='http://www.w3.org/1998/Math/MathML'
+		 display='inline'><mi>w</mi><mo>=</mo><mover><mi>z</mi><mo>&#x000AF;</mo></mover></math>.</p>
+	<li><p><strong>Roots</strong>: The roots of each point are
+	calculated.  You can choose which roots to calculate, in the
+	range 2 to 12.  All of the roots are shown, and the diagram
+	    shows the resulting regular polygon.</p>
+	<li><p><strong>Möbius</strong>: A Möbius transformation is
+	applied to each point.  This requires four control points.
+	The transformation
+	is <math xmlns='http://www.w3.org/1998/Math/MathML'
+	display='inline'><mi>w</mi><mo>=</mo><mfrac><mrow><msub><mi>z</mi> <mn>1</mn></msub><mi>z</mi><mo>+</mo><msub><mi>z</mi> <mn>2</mn></msub></mrow><mrow><msub><mi>z</mi> <mn>3</mn></msub><mi>z</mi><mo>+</mo><msub><mi>z</mi> <mn>4</mn></msub></mrow></mfrac></math>.
+	By choosing the control points carefully, lots of different
+	transformations can be viewed using this.</p>
+	    
+    </div>
+  </body>
+</html>
