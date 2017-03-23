@@ -265,9 +265,11 @@ function drawPoints() {
     ctx.fillStyle = style.point.colour;
     var r = style.point.radius;
     points.forEach(function(v) {
-	ctx.beginPath();
-	ctx.arc(s * v.x + ox, -s * v.y + oy, r, 0, 2*Math.PI);
-	ctx.fill();
+	if (s * v.x + ox < w) {
+	    ctx.beginPath();
+	    ctx.arc(s * v.x + ox, -s * v.y + oy, r, 0, 2*Math.PI);
+	    ctx.fill();
+	}
     });
 }
 
@@ -288,9 +290,11 @@ function drawCalcPoints() {
     var r = style.cpoint.radius;
     cpoints.forEach(function(v) {
 	if (v) {
-	    ctx.beginPath();
-	    ctx.arc(s * v.x + ox, -s * v.y + oy, r, 0, 2*Math.PI);
-	    ctx.fill();
+	    if (s * v.x + ox > lx) {
+		ctx.beginPath();
+		ctx.arc(s * v.x + ox, -s * v.y + oy, r, 0, 2*Math.PI);
+		ctx.fill();
+	    }
 	}
     });
 }
@@ -326,10 +330,12 @@ function drawPoint(z,v) {
     var oy = s * centre.y + h/2;
     ctx.fillStyle = style.point.colour;
     var r = style.point.radius;
-    ctx.beginPath();
-    ctx.arc(s * z.x + ox, -s * z.y + oy, r, 0, 2*Math.PI);
-    ctx.fill();
-    if (!w)
+    if (s * z.x + ox < w) {
+	ctx.beginPath();
+	ctx.arc(s * z.x + ox, -s * z.y + oy, r, 0, 2*Math.PI);
+	ctx.fill();
+    }
+    if (!v)
 	return;
     ctx = layers['cpoints'];
     if (style.singleton)
@@ -337,9 +343,11 @@ function drawPoint(z,v) {
     ctx.fillStyle = style.cpoint.colour;
     r = style.cpoint.radius;
     v.forEach(function(u) {
-	ctx.beginPath();
-	ctx.arc(s * u.x + ox + lx, -s * u.y + oy, r, 0, 2*Math.PI);
-	ctx.fill();
+	if (s * u.x + ox > 0) {
+	    ctx.beginPath();
+	    ctx.arc(s * u.x + ox + lx, -s * u.y + oy, r, 0, 2*Math.PI);
+	    ctx.fill();
+	}
     });
     drawLabels();
 }
