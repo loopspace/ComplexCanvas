@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta charset="UTF-8" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="viewport" id="viewport" content="width=device-width initial-scale=1 maximum-scale=1 user-scalable=no" />
+    <meta charset="UTF-8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="viewport" id="viewport" content="width=device-width initial-scale=1 maximum-scale=1 user-scalable=no">
     
     <title>Complex Visualiser</title>
     
-    <link rel="stylesheet" type="text/css" href="css/style.css" />
+    <link rel="stylesheet" type="text/css" href="css/style.css">
     <script type="text/javascript" src="js/complex.js"></script>
     <script type="text/javascript" src="js/main.js"></script>
 		
@@ -15,10 +15,10 @@
   <body>
     <div id="layers">
       <canvas id="background" class="layer"></canvas>
-      <canvas id="points" class="layer"></canvas>
-      <canvas id="cpoints" class="layer"></canvas>
       <canvas id="axes" class="layer"></canvas>
       <canvas id="labels" class="layer"></canvas>
+      <canvas id="points" class="layer"></canvas>
+      <canvas id="cpoints" class="layer"></canvas>
     </div>
     <div id="controls">
       <div id="icons">
@@ -41,6 +41,14 @@
 		  <option value="roots">Roots</option>
 		  <option value="mobius">Möbius</option>
 		</select>
+	      </td>
+	    </tr>
+	    <tr>
+	      <td>
+		Split screen:
+	      </td>
+	      <td>
+		<input type="checkbox" id="split">
 	      </td>
 	    </tr>
 	    <tr>
@@ -71,6 +79,16 @@
 	    <tr>
 	      <td>Single Point:</td>
 	      <td><input type="checkbox" id="singleton"></td>
+	    </tr>
+	    <tr id="ptopts">
+	      <td>Add points as:</td>
+	      <td>
+		<select id="pts">
+		  <option value=0>Points</option>
+		  <option value=1>Lines</option>
+		  <option value=2>Circles</option>
+		</select>
+	      </td>
 	    </tr>
 	    <tr id="rootsel">
 	      <td>Root:</td>

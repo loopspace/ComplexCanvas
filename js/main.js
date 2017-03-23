@@ -1,9 +1,11 @@
 var layers = {};
 var centre;
 var scale;
+var split;
 var style = {
     axesWidth: 5,
     bgHue: 0,
+    bgHueTgt: 180,
     font: "sans",
     fontSize: "18px",
     stroke: 'hsl(0,0,0)',
@@ -26,6 +28,7 @@ var style = {
     cartesian: true,
     border: 3,
     singleton: false,
+    points: 0,
     root: 4,
 }
 var points;
@@ -51,6 +54,10 @@ function init() {
     container.addEventListener('mouseup',doMouseUp,false);
     container.addEventListener('mouseout',doMouseOut,false);
     container.addEventListener('mousemove',doMouseMove,false);
+    container.addEventListener('touchstart',doMouseDown,false);
+    container.addEventListener('touchend',doMouseUp,false);
+    container.addEventListener('touchcancel',doMouseOut,false);
+    container.addEventListener('touchmove',doMouseMove,false);
     var h = window.innerHeight, w = window.innerWidth;
     [
 	'background',
@@ -79,6 +86,16 @@ function init() {
 	setOperation(this.value);
     };
     setOperation(ctrl.value);
+    ctrl = document.getElementById('split');
+    ctrl.onchange = function(e) {
+	split = this.checked;
+	drawBackground();
+	drawAxes();
+	drawPoints();
+	drawCalcPoints();
+	drawLabels();
+    };
+    split = ctrl.checked;
     ctrl = document.getElementById('style');
     ctrl.onchange = function(e) {
 	if (this.value == 0) {
@@ -93,6 +110,12 @@ function init() {
     ctrl = document.getElementById('singleton');
     ctrl.onchange = function(e) {
 	style.singleton = this.checked;
+	var pts = document.getElementById('ptopts');
+	if (style.singleton) {
+	    pts.style.display = 'none';
+	} else {
+	    pts.style.display = 'table-row';
+	}
 	clear(layers['points']);
 	clear(layers['cpoints']);
 	points = [points.pop()];
@@ -100,6 +123,26 @@ function init() {
 	recalcPoints();
     }
     style.singleton = ctrl.checked;
+    if (style.singleton) {
+	var pts = document.getElementById('ptopts');
+	pts.style.display = 'none';
+    }
+    ctrl = document.getElementById('pts');
+    ctrl.onchange = function(e) {
+	style.points = this.value;
+    };
+    style.points = ctrl.value;
+    ctrl = document.getElementById('style');
+    ctrl.onchange = function(e) {
+	if (this.value == 0) {
+	    style.cartesian = true;
+	} else {
+	    style.cartesian = false;
+	}
+	drawLabels();
+    };
+    if (ctrl.value == 1)
+	style.cartesian = false;
     ctrl = document.getElementById('root');
     ctrl.onchange = function(e) {
 	style.root = parseInt(this.value,10);
@@ -158,6 +201,13 @@ function drawBackground() {
     clear(ctx);
     var w = ctx.canvas.width, h = ctx.canvas.height;
     ctx.save();
+    ctx.fillStyle = "rgb(0,0,0)";
+    ctx.fillRect(0, 0, w, h);
+    if (split) {
+	w /= 2;
+	ctx.fillStyle = "hsl(" + style.bgHueTgt + ",100%,25%)";
+	ctx.fillRect(w, 0, w, h);
+    }
     ctx.fillStyle = "hsl(" + style.bgHue + ",100%,25%)";
     ctx.fillRect(0, 0, w, h);
     ctx.restore();
@@ -169,26 +219,36 @@ function drawAxes() {
     var s = scale;
     var w = ctx.canvas.width;
     var h = ctx.canvas.height;
-    var ox = s * centre.x + w/2;
-    var oy = s * centre.y + h/2;
+    var ox,oy;
+    if (split) {
+	w /= 2;
+	ox = s * centre.x + w/2;
+	oy = s * centre.y + h/2;
+	drawAxesAux(ctx,s,w,w,h,ox,oy);
+    }
+    ox = s * centre.x + w/2;
+    oy = s * centre.y + h/2;
+    drawAxesAux(ctx,s,0,w,h,ox,oy);
+}
+
+function drawAxesAux(ctx,s,lx,w,h,ox,oy) {
     ctx.lineWidth = style.axesWidth;
     ctx.strokeStyle = style.stroke;
     ctx.beginPath();
-    ctx.moveTo(ox,h);
-    ctx.lineTo(ox,0);
+    ctx.moveTo(lx + ox,h);
+    ctx.lineTo(lx + ox,0);
     ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(0,oy);
-    ctx.lineTo(w,oy);
+    ctx.moveTo(lx,oy);
+    ctx.lineTo(lx + w,oy);
     ctx.stroke();
     ctx.beginPath();
-    ctx.beginPath();
-    ctx.arc(ox,oy,s,0,2*Math.PI);
+    ctx.arc(lx + ox,oy,s,0,2*Math.PI);
     ctx.stroke();
     ctx.fillStyle = style.labelColour;
     ctx.font = style.fontSize + ' ' + style.font;
-    ctx.fillText("1",ox+s,oy);
-    ctx.fillText("i",ox,oy-s);
+    ctx.fillText("1",lx+ox+s,oy);
+    ctx.fillText("i",lx+ox,oy-s);
 }
 
 function drawPoints() {
@@ -197,6 +257,9 @@ function drawPoints() {
     var s = scale;
     var w = ctx.canvas.width;
     var h = ctx.canvas.height;
+    if (split) {
+	w /= 2;
+    };
     var ox = s * centre.x + w/2;
     var oy = s * centre.y + h/2;
     ctx.fillStyle = style.point.colour;
@@ -214,7 +277,12 @@ function drawCalcPoints() {
     var s = scale;
     var w = ctx.canvas.width;
     var h = ctx.canvas.height;
-    var ox = s * centre.x + w/2;
+    var lx = 0;
+    if (split) {
+	w /= 2;
+	lx = w;
+    };
+    var ox = s * centre.x + w/2 + lx;
     var oy = s * centre.y + h/2;
     ctx.fillStyle = style.cpoint.colour;
     var r = style.cpoint.radius;
@@ -249,6 +317,11 @@ function drawPoint(z,v) {
     var s = scale;
     var w = ctx.canvas.width;
     var h = ctx.canvas.height;
+    var lx = 0;
+    if (split) {
+	w /= 2;
+	lx = w;
+    };
     var ox = s * centre.x + w/2;
     var oy = s * centre.y + h/2;
     ctx.fillStyle = style.point.colour;
@@ -265,7 +338,7 @@ function drawPoint(z,v) {
     r = style.cpoint.radius;
     v.forEach(function(u) {
 	ctx.beginPath();
-	ctx.arc(s * u.x + ox, -s * u.y + oy, r, 0, 2*Math.PI);
+	ctx.arc(s * u.x + ox + lx, -s * u.y + oy, r, 0, 2*Math.PI);
 	ctx.fill();
     });
     drawLabels();
@@ -285,23 +358,28 @@ function drawLabels() {
     var s = scale;
     var w = ctx.canvas.width;
     var h = ctx.canvas.height;
+    var lx = 0;
+    if (split) {
+	w /= 2;
+	lx = w;
+    };
     var ox = s * centre.x + w/2;
     var oy = s * centre.y + h/2;
     var z;
     if (points.length > 0) {
 	z = points[points.length - 1];
 	lines(ctx,z);
-	doLabel(z,style.point);
+	doLabel(z,style.point,0);
     }
     if (cpoints.length > 0) {
 	z = cpoints[cpoints.length - 1];
-	doLabel(z,style.cpoint);
+	doLabel(z,style.cpoint,lx);
     }
     if (nctrls > 0) {
 	var r = style.ctrlPoint.radius;
 	for (var i = 0; i < nctrls; i++) {
 	    ctx.fillStyle = style.labelColour;
-	    doLabel(ctrlpts[i],style.ctrlPoint);
+	    doLabel(ctrlpts[i],style.ctrlPoint,0);
 	    ctx.fillStyle = style.ctrlPoint.colour[i];
 	    ctx.beginPath();
 	    ctx.arc(s * ctrlpts[i].x + ox, -s * ctrlpts[i].y + oy, r, 0, 2*Math.PI);
@@ -311,13 +389,16 @@ function drawLabels() {
     }
 }
 
-function drawCartesian(z,st) {
+function drawCartesian(z,st,lx) {
     var bdr = style.border;
     var ctx = layers['labels'];
     var s = scale;
     var w = ctx.canvas.width;
     var h = ctx.canvas.height;
-    var ox = s * centre.x + w/2;
+    if (split) {
+	w /= 2;
+    }
+    var ox = s * centre.x + w/2 + lx;
     var oy = s * centre.y + h/2;
     var x = s * z.x + ox;
     var y =  -s * z.y + oy;
@@ -372,13 +453,16 @@ function drawCartesian(z,st) {
     }
 }
 
-function drawPolar(z,st) {
+function drawPolar(z,st,lx) {
     var bdr = style.border;
     var ctx = layers['labels'];
     var s = scale;
     var w = ctx.canvas.width;
     var h = ctx.canvas.height;
-    var ox = s * centre.x + w/2;
+    if (split) {
+	w /= 2;
+    };
+    var ox = s * centre.x + w/2 + lx;
     var oy = s * centre.y + h/2;
     var x = s * z.x + ox;
     var y =  -s * z.y + oy;
@@ -448,6 +532,9 @@ function addPoint(e) {
     var coords = getRelativeCoords(e);
     var w = layers['points'].canvas.width, h = layers['points'].canvas.height;
     var s = scale;
+    if (split) {
+	w /= 2;
+    };
     var x = (coords.x - w/2)/s;
     var y = -(coords.y - h/2)/s;
     var z = new Complex(x,y);
@@ -463,11 +550,60 @@ function addPoint(e) {
     drawPoint(z,calc(z));
 }
 
+var ipt;
+function startLine(e) {
+    ipt = points.length;
+    addPoint(e);
+}
+
+function endLine(e) {
+    addPoint(e);
+    var a = points[ipt];
+    var b = points[points.length-1].sub(a);
+    var n = Math.floor(b.len()*10);
+    var m = points.length;
+    for (var i = ipt+1; i < m; i++) {
+	points.pop();
+    }
+    var z;
+    for (var i = 0; i < n; i++) {
+	z = a.add(b.mul(i/n));
+	points.push(z);
+    }
+    drawPoints();
+    recalcPoints();
+}
+
+function startCircle(e) {
+    ipt = points.length;
+    addPoint(e);
+}
+
+function endCircle(e) {
+    addPoint(e);
+    var c = points[ipt];
+    var r = points[points.length-1].sub(c);
+    var n = Math.floor(2*Math.PI*r.len()*10);
+    var m = points.length;
+    for (var i = ipt+1; i < m; i++) {
+	points.pop();
+    }
+    var z = new Complex(Math.cos(2*Math.PI/n), Math.sin(2*Math.PI/n));
+    for (var i = 0; i < n; i++) {
+	points.push(c.add(r.mul(z.pow(i))));
+    }
+    drawPoints();
+    recalcPoints();
+}
+
 function doMouseDown(e) {
     var coords = getRelativeCoords(e);
     var b = false;
     var w = layers['points'].canvas.width, h = layers['points'].canvas.height;
     var s = scale;
+    if (split) {
+	w /= 2;
+    };
     var ox = s * centre.x + w/2;
     var oy = s * centre.y + h/2;
     var d = tolerance;
@@ -487,7 +623,13 @@ function doMouseDown(e) {
 	mouseAction = 2;
     } else {
 	mouseAction = 1;
-	addPoint(e);
+	if (style.singleton || style.points == 0) {
+	    addPoint(e);
+	} else if (style.points == 1) {
+	    startLine(e);
+	} else if (style.points == 2) {
+	    startCircle(e);
+	}
     }
 }
 
@@ -501,11 +643,20 @@ function doMouseOut(e) {
 
 function doMouseMove(e) {
     if (mouseAction == 1) {
-	addPoint(e);
+	if (style.singleton || style.points == 0) {
+	    addPoint(e);
+	} else if (style.points == 1) {
+	    endLine(e);
+	} else if (style.points == 2) {
+	    endCircle(e);
+	}
     } else if (mouseAction == 2) {
 	var coords = getRelativeCoords(e);
 	var w = layers['points'].canvas.width, h = layers['points'].canvas.height;
 	var s = scale;
+	if (split) {
+	    w /= 2;
+	};
 	var ox = s * centre.x + w/2;
 	var oy = s * centre.y + h/2;
 	var x = (coords.x + offset.x - ox)/s;
@@ -545,12 +696,17 @@ operations = {
 	    var s = scale;
 	    var w = ctx.canvas.width;
 	    var h = ctx.canvas.height;
+	    var lx = 0;
+	    if (split) {
+		w /= 2;
+		lx = w;
+	    };
 	    var ox = s * centre.x + w/2;
 	    var oy = s * centre.y + h/2;
 	    var x = s * z.x + ox;
 	    var y =  -s * z.y + oy;
 	    var w = z.add(ctrlpts[0]);
-	    var ax = s * w.x + ox;
+	    var ax = s * w.x + ox + lx;
 	    var ay =  -s * w.y + oy;
 	    var cx = s * ctrlpts[0].x + ox;
 	    var cy =  -s * ctrlpts[0].y + oy;
@@ -558,8 +714,15 @@ operations = {
 	    ctx.beginPath();
 	    ctx.moveTo(ox,oy);
 	    ctx.lineTo(x,y);
+	    if (split) {
+		ctx.moveTo(ox + lx,oy);
+	    }
 	    ctx.lineTo(ax,ay);
-	    ctx.lineTo(cx,cy);
+	    if (split) {
+		ctx.moveTo(cx,cy);
+	    } else {
+		ctx.lineTo(cx,cy);
+	    }
 	    ctx.lineTo(ox,oy);
 	    ctx.stroke();
 	},
@@ -571,21 +734,33 @@ operations = {
 	    var s = scale;
 	    var w = ctx.canvas.width;
 	    var h = ctx.canvas.height;
+	    var lx = 0;
+	    if (split) {
+		w /= 2;
+		lx = w;
+	    }
 	    var ox = s * centre.x + w/2;
 	    var oy = s * centre.y + h/2;
 	    var x = s * z.x + ox;
 	    var y =  -s * z.y + oy;
 	    var w = z.sub(ctrlpts[0]);
-	    var ax = s * w.x + ox;
+	    var ax = s * w.x + ox + lx;
 	    var ay =  -s * w.y + oy;
 	    var cx = s * ctrlpts[0].x + ox;
 	    var cy =  -s * ctrlpts[0].y + oy;
 	    ctx.strokeStyle = style.labelStroke;
 	    ctx.beginPath();
-	    ctx.moveTo(ox,oy);
+	    ctx.moveTo(ox + lx,oy);
 	    ctx.lineTo(ax,ay);
+	    if (split) {
+		ctx.moveTo(ox,oy);
+	    };
 	    ctx.lineTo(x,y);
-	    ctx.lineTo(cx,cy);
+	    if (split) {
+		ctx.moveTo(cx,cy);
+	    } else {		
+		ctx.lineTo(cx,cy);
+	    }
 	    ctx.lineTo(ox,oy);
 	    ctx.stroke();
 	},
@@ -597,12 +772,17 @@ operations = {
 	    var s = scale;
 	    var w = ctx.canvas.width;
 	    var h = ctx.canvas.height;
+	    var lx = 0;
+	    if (split) {
+		w /= 2;
+		lx = w;
+	    }
 	    var ox = s * centre.x + w/2;
 	    var oy = s * centre.y + h/2;
 	    var x = s * z.x + ox;
 	    var y =  -s * z.y + oy;
 	    var w = z.mul(ctrlpts[0]);
-	    var ax = s * w.x + ox;
+	    var ax = s * w.x + ox + lx;
 	    var ay =  -s * w.y + oy;
 	    var cx = s * ctrlpts[0].x + ox;
 	    var cy =  -s * ctrlpts[0].y + oy;
@@ -610,12 +790,18 @@ operations = {
 	    ctx.beginPath();
 	    ctx.moveTo(ox,oy);
 	    ctx.lineTo(x,y);
-	    ctx.lineTo(ox + s,oy);
-	    ctx.lineTo(ox,oy);
+	    if (!split) {
+		ctx.lineTo(ox + s,oy);
+		ctx.lineTo(ox,oy);
+	    };
 	    ctx.moveTo(ox,oy);
 	    ctx.lineTo(cx,cy);
-	    ctx.lineTo(ax,ay);
-	    ctx.lineTo(ox,oy);
+	    if (split) {
+		ctx.moveTo(ax,ay);
+	    } else {
+		ctx.lineTo(ax,ay);
+	    }
+	    ctx.lineTo(ox + lx,oy);
 	    ctx.stroke();
 	},
     },
@@ -626,21 +812,26 @@ operations = {
 	    var s = scale;
 	    var w = ctx.canvas.width;
 	    var h = ctx.canvas.height;
+	    var lx = 0;
+	    if (split) {
+		w /= 2;
+		lx = w;
+	    }
 	    var ox = s * centre.x + w/2;
 	    var oy = s * centre.y + h/2;
 	    var x = s * z.x + ox;
 	    var y =  -s * z.y + oy;
 	    var w = z.div(ctrlpts[0]);
-	    var ax = s * w.x + ox;
+	    var ax = s * w.x + ox + lx;
 	    var ay =  -s * w.y + oy;
 	    var cx = s * ctrlpts[0].x + ox;
 	    var cy =  -s * ctrlpts[0].y + oy;
 	    ctx.strokeStyle = style.labelStroke;
 	    ctx.beginPath();
-	    ctx.moveTo(ox,oy);
+	    ctx.moveTo(ox + lx,oy);
 	    ctx.lineTo(ax,ay);
-	    ctx.lineTo(ox + s,oy);
-	    ctx.lineTo(ox,oy);
+	    ctx.lineTo(ox + lx + s,oy);
+	    ctx.lineTo(ox + lx,oy);
 	    ctx.moveTo(ox,oy);
 	    ctx.lineTo(cx,cy);
 	    ctx.lineTo(x,y);
@@ -665,7 +856,12 @@ operations = {
 	    var s = scale;
 	    var w = ctx.canvas.width;
 	    var h = ctx.canvas.height;
-	    var ox = s * centre.x + w/2;
+	    var lx = 0;
+	    if (split) {
+		w /= 2;
+		lx = w;
+	    }
+	    var ox = s * centre.x + w/2 + lx;
 	    var oy = s * centre.y + h/2;
 	    var ret = [];
 	    for (var i = 0; i < style.root; i++) {
