@@ -1,3 +1,7 @@
+html {
+    touch-action: none;
+}
+
 #layers {
     position: relative;
 }
@@ -37,3 +41,10 @@ body {
     padding-bottom: 4px;
 }
 
+#smenu {
+    display: none;
+}
+
+#colourpicker {
+    display: none;
+}
