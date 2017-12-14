@@ -627,6 +627,7 @@ function endCircle(e) {
 }
 
 function doWheel(e) {
+    e.preventDefault();
     var coords = getRelativeCoords(e);
     var w = layers['points'].canvas.width, h = layers['points'].canvas.height;
     var s = scale;
@@ -645,6 +646,7 @@ function doWheel(e) {
 }
 
 function doMouseDown(e) {
+    e.preventDefault();
     var coords = getRelativeCoords(e);
     var b = false;
     var w = layers['points'].canvas.width, h = layers['points'].canvas.height;
@@ -682,15 +684,18 @@ function doMouseDown(e) {
 }
 
 function doMouseUp(e) {
+    e.preventDefault();
     doMouseMove(e);
     mouseAction = 0;
 }
 
 function doMouseOut(e) {
+    e.preventDefault();
     mouseAction = 0;
 }
 
 function doMouseMove(e) {
+    e.preventDefault();
     if (mouseAction == 1) {
 	if (style.singleton || style.points == 0) {
 	    addPoint(e);
