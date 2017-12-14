@@ -59,6 +59,7 @@ function init() {
     container.addEventListener('touchcancel',doMouseOut,false);
     container.addEventListener('touchmove',doMouseMove,false);
     container.addEventListener('wheel',doWheel,false);
+    window.blockMenuHeaderScroll = true;
     var h = window.innerHeight, w = window.innerWidth;
     [
 	'background',
